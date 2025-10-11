@@ -14,10 +14,7 @@ class Ship:
         self.ship_mask = pygame.mask.from_surface(self.ship_img)    # Pixel-perfect
         
         # Resizing image
-        width = 50
-        height = 50
-        size = (width, height)
-        self.ship_img = pygame.transform.scale(self.ship_img, size)
+        self.ship_img = pygame.transform.scale(self.ship_img, self.settings.ship_size)
         
         self.ship_rect = self.ship_img.get_rect()   # Ship position
         

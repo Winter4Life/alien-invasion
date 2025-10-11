@@ -20,4 +20,14 @@ class Settings:
             self.stars.append((x, y))
             
         # Ship settings
+        ship_width = 50
+        ship_height = 50
+        self.ship_size = (ship_width, ship_height)
         self.ship_speed = 2.5
+        
+        # Bullet settings
+        bullet_width = 15
+        bullet_height = 30
+        self.bullet_size = (bullet_width, bullet_height)
+        self.bullet_speed = 2.0
+        self.bullets_allowed = 15

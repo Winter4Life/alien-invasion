@@ -1,9 +1,9 @@
 import sys
 import pygame
-import random
 
 from settings import Settings
 from ship import Ship
+from bullet import Bullet
 
 class AlienInvasion:
     """Overall class to manage game assets and behavior"""
@@ -19,12 +19,14 @@ class AlienInvasion:
         pygame.display.set_caption("Alien Invasion")    # Screen title
         
         self.ship = Ship(self)  # Init ship
+        self.bullets = [] # Init bullet
         
     def run_game(self):
         """Start the main loop for the game"""
         while True:
             self._check_events()
             self.ship.update()
+            self._update_bullets()
             self._update_screen()
             self.clock.tick(60)
             
@@ -44,15 +46,30 @@ class AlienInvasion:
         """Response to keypresses"""
         if event.key == pygame.K_d:
             self.ship.moving_right = True
-        elif  event.key == pygame.K_a:
+        elif event.key == pygame.K_a:
             self.ship.moving_left = True
+        elif event.key == pygame.K_UP:
+            self._fire_bullet()
         
     def _check_keyup_events(self, event):
         """Response to keyreleases"""
         if event.key == pygame.K_d:
             self.ship.moving_right = False
-        elif  event.key == pygame.K_a:
+        elif event.key == pygame.K_a:
             self.ship.moving_left = False
+            
+    def _fire_bullet(self):
+        """Create a new bullet"""
+        if len(self.bullets) < self.settings.bullets_allowed:
+            new_bullet = Bullet(self)
+            self.bullets.append(new_bullet)
+        
+    def _update_bullets(self):
+        """Update position of bullets and remove bullets that have gone off-screen"""
+        for bullet in self.bullets[:]:  # Iterate over a copy of the list
+            bullet.update()
+            if bullet.bullet_rect.bottom < 0:
+                self.bullets.remove(bullet)
                     
     def _update_screen(self):
         """Update images on the screen, and flip to the new screen"""
@@ -60,7 +77,10 @@ class AlienInvasion:
         self.screen.fill(self.settings.bg_color)
         for star_pos in self.settings.stars:  # Draw stars
             self.screen.set_at(star_pos, self.settings.bg_stars)  # Sets a single pixel
-            
+        # Redraw the bullets
+        for bullet in self.bullets:
+            bullet.draw_bullet()
+                
         self.ship.blitme()  # Draw ship
                 
         # Make the most recently drawn screen variable
