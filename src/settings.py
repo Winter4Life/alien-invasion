@@ -18,3 +18,6 @@ class Settings:
             x = random.randint(0, 1200)
             y = random.randint(0, 800)
             self.stars.append((x, y))
+            
+        # Ship settings
+        self.ship_speed = 2.5
