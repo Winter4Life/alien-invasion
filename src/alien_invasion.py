@@ -19,7 +19,7 @@ class AlienInvasion:
         pygame.display.set_caption("Alien Invasion")    # Screen title
         
         self.ship = Ship(self)  # Init ship
-        self.bullets = [] # Init bullet
+        self.bullets = pygame.sprite.Group() # Init bullet
         
     def run_game(self):
         """Start the main loop for the game"""
@@ -34,13 +34,12 @@ class AlienInvasion:
         """Respond to keypresses and mouse events"""
         # Returns a list of recent events since func call
         for event in pygame.event.get():  
-                if event.type == pygame.QUIT:
-                    sys.exit()
-                elif event.type == pygame.KEYDOWN:
-                    self._check_keydown_events(event)
-                        
-                elif event.type == pygame.KEYUP:
-                    self._check_keyup_events(event)
+            if event.type == pygame.QUIT:
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                self._check_keydown_events(event)
+            elif event.type == pygame.KEYUP:
+                self._check_keyup_events(event)
                         
     def _check_keydown_events(self, event):
         """Response to keypresses"""
@@ -62,14 +61,17 @@ class AlienInvasion:
         """Create a new bullet"""
         if len(self.bullets) < self.settings.bullets_allowed:
             new_bullet = Bullet(self)
-            self.bullets.append(new_bullet)
+            self.bullets.add(new_bullet)
         
     def _update_bullets(self):
         """Update position of bullets and remove bullets that have gone off-screen"""
-        for bullet in self.bullets[:]:  # Iterate over a copy of the list
-            bullet.update()
-            if bullet.bullet_rect.bottom < 0:
-                self.bullets.remove(bullet)
+        # Update all bullets (calls each bullet's update method)
+        self.bullets.update()
+        
+        # Remove bullets that have gone off-screen (extra safety)
+        for bullet in self.bullets.copy():
+            if bullet.bullet_rect.bottom <= 0:
+                bullet.kill()
                     
     def _update_screen(self):
         """Update images on the screen, and flip to the new screen"""
@@ -78,7 +80,7 @@ class AlienInvasion:
         for star_pos in self.settings.stars:  # Draw stars
             self.screen.set_at(star_pos, self.settings.bg_stars)  # Sets a single pixel
         # Redraw the bullets
-        for bullet in self.bullets:
+        for bullet in self.bullets.sprites():
             bullet.draw_bullet()
                 
         self.ship.blitme()  # Draw ship
