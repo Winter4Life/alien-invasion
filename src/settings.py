@@ -31,3 +31,8 @@ class Settings:
         self.bullet_size = (bullet_width, bullet_height)
         self.bullet_speed = 2.0
         self.bullets_allowed = 15
+        
+        # Alien settings
+        alien_width = 30
+        alien_height = 30
+        self.alien_size = (alien_width, alien_height)
