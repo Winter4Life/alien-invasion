@@ -11,25 +11,25 @@ class Bullet(Sprite):
         self.settings = ai_game.settings
         
         # Load bullet image
-        self.bullet_img = pygame.image.load("images/bullet.png").convert_alpha()
+        self.image = pygame.image.load("images/bullet.png").convert_alpha()
         
         # Resizing image
-        self.bullet_img = pygame.transform.scale(self.bullet_img, self.settings.bullet_size)
+        self.image = pygame.transform.scale(self.image, self.settings.bullet_size)
         
         # Setting correct position
-        self.bullet_rect = self.bullet_img.get_rect()
-        self.bullet_rect.midtop = ai_game.ship.ship_rect.midtop
+        self.rect = self.image.get_rect()
+        self.rect.midtop = ai_game.ship.rect.midtop
         
         # Create a mask for collisions (only the core counts)
-        self.mask = pygame.mask.from_surface(self.bullet_img)
+        self.mask = pygame.mask.from_surface(self.image)
         
-        self.y = float(self.bullet_rect.y)
+        self.y = float(self.rect.y)
         
     def update(self):
         """Move the bullet up the screen"""
         self.y -= self.settings.bullet_speed
-        self.bullet_rect.y = int(self.y)
+        self.rect.y = int(self.y)
         
     def draw_bullet(self):
         """Draw the bullet to the screen"""
-        self.screen.blit(self.bullet_img, self.bullet_rect)
+        self.screen.blit(self.image, self.rect)

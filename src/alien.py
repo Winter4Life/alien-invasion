@@ -9,30 +9,30 @@ class Alien(Sprite):
         super().__init__()
         self.screen = ai_game.screen
         self.settings = ai_game.settings
-        self.color_type = color_type # green or red
+        self.color_type = color_type # green or red  
         
         # Loading alien image
         if self.color_type == "green":
-            self.alien_image = pygame.image.load("images/alien_green.png").convert_alpha()
+            self.image = pygame.image.load("images/alien_green.png").convert_alpha()
         else:
-            self.alien_image = pygame.image.load("images/alien_red.png").convert_alpha()
+            self.image = pygame.image.load("images/alien_red.png").convert_alpha()
         
-        self.alien_image = pygame.transform.scale(self.alien_image, self.settings.alien_size)
-        self.alien_rect = self.alien_image.get_rect()
+        self.image = pygame.transform.scale(self.image, self.settings.alien_size)
+        self.rect = self.image.get_rect()
         
         # Store exact position
-        self.x = float(self.alien_rect.x)
+        self.x = float(self.rect.x)
         
     def check_edges(self):
         """Return true if alien is at edge of screen"""
         screen_rect = self.screen.get_rect()
-        return (self.alien_rect.right >= screen_rect.right) or (self.alien_rect.left <= 0)
+        return (self.rect.right >= screen_rect.right) or (self.rect.left <= 0)
     
     def update(self):
         """Move the alien to the right or left"""
         self.x += self.settings.alien_speed * self.settings.fleet_direction
-        self.alien_rect.x = self.x
+        self.rect.x = self.x
         
     def draw_alien(self):
         """Draw the alien to the screen"""
-        self.screen.blit(self.alien_image, self.alien_rect)
+        self.screen.blit(self.image, self.rect)
