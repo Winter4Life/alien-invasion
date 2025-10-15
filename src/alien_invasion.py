@@ -32,6 +32,7 @@ class AlienInvasion:
             self._check_events()
             self.ship.update()
             self._update_bullets()
+            self._update_aliens()
             self._update_screen()
             self.clock.tick(60)
             
@@ -113,7 +114,7 @@ class AlienInvasion:
 
         for row in range(num_rows):
             for col in range(aliens_per_row):
-                color = random.choice(["green", "red"])  # 50/50 chance
+                color = random.choices(["green", "red"], weights = [.6, .4])[0]  # 60/40 chance
                 self._create_alien(start_x + col * (alien_width * 2),
                                 start_y + row * (alien_height * 2),
                                 color)
@@ -122,8 +123,26 @@ class AlienInvasion:
         alien = Alien(self, color_type=color)
         alien.alien_rect.x = x
         alien.alien_rect.y = y
+        alien.x = float(x)
         self.aliens.add(alien)
-
+        
+    def _check_fleet_edges(self):
+        """If alien fleet hits an edge, change direction and drop"""
+        for alien in self.aliens.sprites():
+            if alien.check_edges():
+                self._change_fleet_direction()
+                break
+            
+    def _change_fleet_direction(self):
+        """Drop entire fleet and change direction"""
+        for alien in self.aliens.sprites():
+            alien.alien_rect.y += self.settings.fleet_drop_speed
+        self.settings.fleet_direction *= -1
+        
+    def _update_aliens(self):
+        """Update the positions of all aliens in the fleet"""
+        self._check_fleet_edges()
+        self.aliens.update()
                 
 if __name__ == '__main__':
     # Make a game instance, and run the game

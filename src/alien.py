@@ -20,12 +20,18 @@ class Alien(Sprite):
         self.alien_image = pygame.transform.scale(self.alien_image, self.settings.alien_size)
         self.alien_rect = self.alien_image.get_rect()
         
-        # Start each new alien near the top left of the screen
-        self.alien_rect.x = self.alien_rect.width
-        self.alien_rect.y = self.alien_rect.height
-        
         # Store exact position
         self.x = float(self.alien_rect.x)
+        
+    def check_edges(self):
+        """Return true if alien is at edge of screen"""
+        screen_rect = self.screen.get_rect()
+        return (self.alien_rect.right >= screen_rect.right) or (self.alien_rect.left <= 0)
+    
+    def update(self):
+        """Move the alien to the right or left"""
+        self.x += self.settings.alien_speed * self.settings.fleet_direction
+        self.alien_rect.x = self.x
         
     def draw_alien(self):
         """Draw the alien to the screen"""
