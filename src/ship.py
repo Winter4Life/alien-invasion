@@ -49,3 +49,9 @@ class Ship:
     def blitme(self):
         """Draw the ship at its current location"""
         self.screen.blit(self.image, self.rect)
+        
+    def center_ship(self):
+        """Center ship on the screen"""
+        self.rect.midbottom = self.screen_rect.midbottom
+        self.rect.y -= 50  # Padding from the bottom
+        self.x = float(self.rect.x)
