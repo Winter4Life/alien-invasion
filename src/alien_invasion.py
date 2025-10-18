@@ -9,6 +9,7 @@ from bullet import Bullet
 from alien import Alien
 from game_stats import GameStats
 from button import Button
+from scoreboard import Scoreboard
 
 class AlienInvasion:
     """Overall class to manage game assets and behavior"""
@@ -24,6 +25,8 @@ class AlienInvasion:
         pygame.display.set_caption("Alien Invasion")    # Screen title
         
         self.stats = GameStats(self)
+        self.sb = Scoreboard(self)
+        self.sb.prep_ships()
         
         self.ship = Ship(self)  
         self.bullets = pygame.sprite.Group() 
@@ -47,6 +50,17 @@ class AlienInvasion:
         for i, (label, button) in enumerate(self.pause_buttons.items()):
             y = center_y - 80 + i * spacing  # adjust vertical offset
             button.set_center((center_x, y))
+            
+        self.game_over_buttons = {
+            "Restart": Button(self, "Restart"),
+            "Quit": Button(self, "Quit Game")
+        }
+        center_x = self.settings.screen_width // 2
+        center_y = self.settings.screen_height // 2
+        spacing = self.settings.pause_button_spacing
+        for i, (label, button) in enumerate(self.game_over_buttons.items()):
+            y = center_y + i * spacing
+            button.set_center((center_x, y))
 
     def run_game(self):
         """Start the main loop for the game"""
@@ -63,7 +77,6 @@ class AlienInvasion:
             
     def _check_events(self):
         """Respond to keypresses and mouse events"""
-        # Returns a list of recent events since func call
         for event in pygame.event.get():  
             if event.type == pygame.QUIT:
                 sys.exit()
@@ -75,16 +88,18 @@ class AlienInvasion:
                 mouse_pos = pygame.mouse.get_pos()
 
                 if not self.game_active:
-                    self._check_play_button(mouse_pos)
+                    # Check if we have lives left to determine which menu to show
+                    if self.stats.ships_left > 0:
+                        self._check_play_button(mouse_pos)
+                    else:
+                        self._check_game_over_menu(mouse_pos)
                 elif self.game_paused:
                     self._check_pause_menu(mouse_pos)
-
-                
+ 
     def _check_play_button(self, mouse_pos):
         """Start a new game when player clicks play"""
         if self.play_button.rect.collidepoint(mouse_pos):
             self.game_active = True
-            pygame.mouse.set_visible(False)
             
     def _check_pause_menu(self, mouse_pos):
         """Handle clicks on pause menu buttons"""
@@ -94,20 +109,32 @@ class AlienInvasion:
                     self.game_paused = False
                 elif label == "Restart":
                     self._restart_game()
-                    self.stats.reset_stats()
                 elif label == "Quit":
                     sys.exit()
                     
+    def _check_game_over_menu(self, mouse_pos):
+        """Handle clicks on game over menu buttons"""
+        for label, button in self.game_over_buttons.items():
+            if button.rect.collidepoint(mouse_pos):
+                if label == "Restart":
+                    self._restart_game()
+                elif label == "Quit":
+                    sys.exit()
+
     def _restart_game(self):
         """Restart the game from scratch"""
         self.stats.ships_left = 3
+        self.stats.score = 0  # Reset the score
         self.bullets.empty()
         self.aliens.empty()
         self._create_fleet()
         self.ship.center_ship()
         self.game_paused = False
+        self.game_active = True
+        # Update scoreboard to show correct number of ships and score
+        self.sb.prep_ships()
+        self.sb.prep_score()
 
-                        
     def _check_keydown_events(self, event):
         """Response to keypresses"""
         if event.key == pygame.K_d:
@@ -119,7 +146,6 @@ class AlienInvasion:
         elif event.key == pygame.K_ESCAPE:
             if self.game_active:
                 self.game_paused = not self.game_paused
-                pygame.mouse.set_visible(True)
         
     def _check_keyup_events(self, event):
         """Response to keyreleases"""
@@ -154,10 +180,17 @@ class AlienInvasion:
             collided=pygame.sprite.collide_mask
         )
         
+        if collisions:
+            for aliens in collisions.values():
+                self.stats.score += self.settings.alien_points + len(aliens)
+            self.sb.prep_score()
+            self.sb.check_high_score()
+        
         if not self.aliens:
             # Destroy existing bullets and create new fleet
             self.bullets.empty()
             self._create_fleet()
+            self.settings.increase_speed()
                     
     def _update_screen(self):
         """Update images on the screen, and flip to the new screen"""
@@ -165,13 +198,17 @@ class AlienInvasion:
         self.screen.fill(self.settings.bg_color)
         for star_pos in self.settings.stars:  # Draw stars
             self.screen.set_at(star_pos, self.settings.bg_stars)  # Sets a single pixel
+            
         # Redraw the bullets
         for bullet in self.bullets.sprites():
             bullet.draw_bullet()       
         self.ship.blitme()  # Draw ship
+        
         # Draw aliens
         for alien in self.aliens.sprites():
             alien.draw_alien()
+            
+        self.sb.show_scores()   # Draw scoreboard
         
         if not self.game_active:
             self.play_button.draw_button()
@@ -195,7 +232,35 @@ class AlienInvasion:
             # Buttons
             for button in self.pause_buttons.values():
                 button.draw_button()
+                
+        # Show game over menu when game is not active and no lives left
+        if not self.game_active and self.stats.ships_left <= 0:
+            panel_width = 400
+            panel_height = 300
+            panel_color = (60, 60, 60)      # dim grey
+            border_color = (100, 100, 100)  # border
+            border_thickness = 4
 
+            panel_rect = pygame.Rect(0, 0, panel_width, panel_height)
+            panel_rect.center = (self.settings.screen_width // 2, 
+                                self.settings.screen_height // 2)
+            
+            pygame.draw.rect(self.screen, border_color, panel_rect)  # border
+            inner_rect = panel_rect.inflate(-border_thickness*2, -border_thickness*2)
+            pygame.draw.rect(self.screen, panel_color, inner_rect)
+
+            # Draw "GAME OVER" at top of panel
+            font = pygame.font.SysFont(None, 72)
+            text_image = font.render("GAME OVER", True, (255, 0, 0))
+            text_rect = text_image.get_rect()
+            text_rect.centerx = panel_rect.centerx
+            text_rect.top = panel_rect.top + 20
+            self.screen.blit(text_image, text_rect)
+
+            # Draw buttons
+            for button in self.game_over_buttons.values():
+                button.draw_button()
+                
         # Make the most recently drawn screen variable
         pygame.display.flip()
     
@@ -252,33 +317,31 @@ class AlienInvasion:
         
     def _update_aliens(self):
         """Update the positions of all aliens in the fleet"""
+        if not self.game_active or self.game_paused:
+            return  # Skip updates when not running
+
         self._check_fleet_edges()
         self.aliens.update()
-        
-        # Looks for alien-ship collisions
+
         if pygame.sprite.spritecollideany(self.ship, self.aliens):
-            #print("Ship hit")
             self._ship_hit()
-            
-        # Looks for aliens reaching the bottom of the screen
+
         self._check_aliens_bottom()
         
     def _ship_hit(self):
         """Responds to the ship being hit"""
         if self.stats.ships_left > 0:
-            # Decrement ships_left
             self.stats.ships_left -= 1
-            # Delete remaining bullets and recreate fleet and ship
+            self.sb.prep_ships()
             self.bullets.empty()
             self.aliens.empty()
             self._create_fleet()
             self.ship.center_ship()
-            
-            # Pause
             sleep(.5)
         else:
+            # Trigger game over immediately
             self.game_active = False
-            
+
 if __name__ == '__main__':
     # Make a game instance, and run the game
     ai = AlienInvasion()
