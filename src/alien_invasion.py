@@ -8,6 +8,7 @@ from ship import Ship
 from bullet import Bullet
 from alien import Alien
 from game_stats import GameStats
+from button import Button
 
 class AlienInvasion:
     """Overall class to manage game assets and behavior"""
@@ -30,14 +31,29 @@ class AlienInvasion:
         
         self._create_fleet()
         
-        self.game_active = True
+        self.game_active = False # Game state
+        self.play_button = Button(self, "Play")
         
+        self.game_paused = False
+        self.pause_buttons = {
+            "Continue": Button(self, "Continue"),
+            "Restart": Button(self, "Restart"),
+            "Quit": Button(self, "Quit Game")
+        }
+        center_x = self.settings.screen_width // 2
+        center_y = self.settings.screen_height // 2
+        spacing = self.settings.pause_button_spacing
+
+        for i, (label, button) in enumerate(self.pause_buttons.items()):
+            y = center_y - 80 + i * spacing  # adjust vertical offset
+            button.set_center((center_x, y))
+
     def run_game(self):
         """Start the main loop for the game"""
         while True:
             self._check_events()
             
-            if self.game_active:
+            if self.game_active and not self.game_paused:
                 self.ship.update()
                 self._update_bullets()
                 self._update_aliens()
@@ -55,6 +71,42 @@ class AlienInvasion:
                 self._check_keydown_events(event)
             elif event.type == pygame.KEYUP:
                 self._check_keyup_events(event)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+
+                if not self.game_active:
+                    self._check_play_button(mouse_pos)
+                elif self.game_paused:
+                    self._check_pause_menu(mouse_pos)
+
+                
+    def _check_play_button(self, mouse_pos):
+        """Start a new game when player clicks play"""
+        if self.play_button.rect.collidepoint(mouse_pos):
+            self.game_active = True
+            pygame.mouse.set_visible(False)
+            
+    def _check_pause_menu(self, mouse_pos):
+        """Handle clicks on pause menu buttons"""
+        for label, button in self.pause_buttons.items():
+            if button.rect.collidepoint(mouse_pos):
+                if label == "Continue":
+                    self.game_paused = False
+                elif label == "Restart":
+                    self._restart_game()
+                    self.stats.reset_stats()
+                elif label == "Quit":
+                    sys.exit()
+                    
+    def _restart_game(self):
+        """Restart the game from scratch"""
+        self.stats.ships_left = 3
+        self.bullets.empty()
+        self.aliens.empty()
+        self._create_fleet()
+        self.ship.center_ship()
+        self.game_paused = False
+
                         
     def _check_keydown_events(self, event):
         """Response to keypresses"""
@@ -64,6 +116,10 @@ class AlienInvasion:
             self.ship.moving_left = True
         elif event.key == pygame.K_UP:
             self._fire_bullet()
+        elif event.key == pygame.K_ESCAPE:
+            if self.game_active:
+                self.game_paused = not self.game_paused
+                pygame.mouse.set_visible(True)
         
     def _check_keyup_events(self, event):
         """Response to keyreleases"""
@@ -117,6 +173,29 @@ class AlienInvasion:
         for alien in self.aliens.sprites():
             alien.draw_alien()
         
+        if not self.game_active:
+            self.play_button.draw_button()
+            
+        if self.game_paused:
+            panel_width = 400
+            panel_height = 300
+            panel_color = (60, 60, 60)      # dim grey
+            border_color = (100, 100, 100)  # border
+            border_thickness = 4
+            
+            panel_rect = pygame.Rect(0, 0, panel_width, panel_height)
+            panel_rect.center = (self.settings.screen_width // 2, 
+                                 self.settings.screen_height // 2)
+            
+            pygame.draw.rect(self.screen, border_color, panel_rect) # Border
+            
+            inner_rect = panel_rect.inflate(-border_thickness*2, -border_thickness*2) # Fill
+            pygame.draw.rect(self.screen, panel_color, inner_rect)
+            
+            # Buttons
+            for button in self.pause_buttons.values():
+                button.draw_button()
+
         # Make the most recently drawn screen variable
         pygame.display.flip()
     

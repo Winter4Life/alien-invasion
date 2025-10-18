@@ -37,6 +37,10 @@ class Settings:
         alien_width = 30
         alien_height = 30
         self.alien_size = (alien_width, alien_height)
-        self.alien_speed = 10.0
+        self.alien_speed = 1.0
         self.fleet_drop_speed = 30
         self.fleet_direction = 1 # Moves right
+        
+        # Pause settings
+        self.pause_button_spacing = 80
+        self.pause_menu_offset_y = -40
